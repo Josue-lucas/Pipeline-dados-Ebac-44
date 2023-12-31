@@ -46,3 +46,44 @@ Recebe a mensagem no parâmetro event;
 Verifica se a mensagem tem origem no grupo do Telegram correto;
 Persiste a mensagem no formato JSON no bucket do AWS S3;
 Retorna uma mensagem de sucesso (código de retorno HTTP igual a 200) a API de bots do Telegram.
+
+# AWS API Gateway
+Na etapa de **ingestão**, o `AWS API Gateway` tem a função de receber as mensagens captadas pelo *bot* do **Telegram**, enviadas via *webhook*, e iniciar uma função do `AWS Lambda`, passando o conteúdo da mensagem no seu parâmetro *event*. Para tanto vamos criar uma API e configurá-la como gatilho da função do `AWS Lambda`:
+
+ - Acesse o serviço e selecione: *Create API* -> *REST API*;
+ - Insira um nome, como padrão, um que termine com o sufixo `-api`;
+ - Selecione: *Actions* -> *Create Method* -> *POST*;
+ - Na tela de *setup*:
+  - Selecione *Integration type* igual a *Lambda Function*;
+  - Habilite o *Use Lambda Proxy integration*;
+  - Busque pelo nome a função do `AWS Lambda`.
+
+Podemos testar a integração com o `AWS Lambda` através da ferramenta de testes do serviço. Por fim, vamos fazer a implantação da API e obter o seu endereço *web*.
+
+ - Selecione: *Actions* -> *Deploy API*;
+ - Selecione: *New Stage* para *Deployment stage*;
+ - Adicione *dev* como `Stage name`.
+
+Copie o a `url` gerada na variável `aws_api_gateway_url`.
+
+```
+aws_api_gateway_url = getpass()
+```
+# Telegram
+Vamos configurar o webhook para redirecionar as mensagens para a url do `AWS API Gateway.`
+
+* `SetWebhook :` O método setWebhook configura o redirecionamento das mensagens captadas pelo bot para o endereço web do paramametro url.
+
+```
+response = requests.get(url=f'{base_url}/setWebhook?url={aws_api_gateway_url}')
+
+print(json.dumps(json.loads(response.text), indent=2))
+```
+
+* `GetWebhookInfo:` O método getWebhookInfo retorna as informações sobre o webhook configurado.
+
+```
+response = requests.get(url=f'{base_url}/getWebhookInfo')
+
+print(json.dumps(json.loads(response.text), indent=2))
+```
